@@ -187,19 +187,31 @@ TEXT ·bcEncrypt(SB), NOSPLIT|NOFRAME, $0-32
 	PXOR  X0, X14    // X14 ^= tk1
 	PXOR  X14, X15   // X15 ^= X14
 
-	// i == 1 ... i == 16
-	MOVQ $16, AX
-
-rounds_loop:
-	ADDQ $16, R14
-
-	PSHUFB X13, X0    // X0 = h(tk1)
-	MOVOU  (R14), X14 // X14 = tk2 ^ tk3 ^ rcon[i]
-	PXOR   X0, X14    // X14 ^= tk1
+#define block_x1_round(N) \
+	PSHUFB X13, X0     \ // X0 = h(tk1)
+	MOVOU  N(R14), X14 \ // X14 = tk2 ^ tk3 ^ rcon[i]
+	PXOR   X0, X14     \ // X14 ^= tk1
 	AESENC X14, X15
 
-	SUBQ $1, AX
-	JNZ  rounds_loop
+// i == 1 ... i == 16
+block_x1_round(16)
+block_x1_round(32)
+block_x1_round(48)
+block_x1_round(64)
+block_x1_round(80)
+block_x1_round(96)
+block_x1_round(112)
+block_x1_round(128)
+block_x1_round(144)
+block_x1_round(160)
+block_x1_round(176)
+block_x1_round(192)
+block_x1_round(208)
+block_x1_round(224)
+block_x1_round(240)
+block_x1_round(256)
+
+#undef block_x1_round
 
 	MOVOU X15, (R15)
 
@@ -261,33 +273,44 @@ block_x4_loop:
 	PXOR  X8, X5
 	PXOR  X8, X6
 	PXOR  X8, X7
-	MOVQ  R14, R9
 	ADDQ  $64, R11
 
-	MOVQ $16, AX
-
-block_x4_rounds_loop:
-	ADDQ $16, R9
-
-	MOVOU  (R9), X8
-	MOVO   X8, X9
-	MOVO   X8, X10
-	MOVO   X8, X11
-	PSHUFB X14, X0
-	PSHUFB X14, X1
-	PSHUFB X14, X2
-	PSHUFB X14, X3
-	PXOR   X0, X8
-	PXOR   X1, X9
-	PXOR   X2, X10
-	PXOR   X3, X11
-	AESENC X8, X4
-	AESENC X9, X5
-	AESENC X10, X6
+#define block_x4_round(N) \
+	MOVOU  N(R14), X8 \
+	MOVO   X8, X9     \
+	MOVO   X8, X10    \
+	MOVO   X8, X11    \
+	PSHUFB X14, X0    \
+	PSHUFB X14, X1    \
+	PSHUFB X14, X2    \
+	PSHUFB X14, X3    \
+	PXOR   X0, X8     \
+	PXOR   X1, X9     \
+	PXOR   X2, X10    \
+	PXOR   X3, X11    \
+	AESENC X8, X4     \
+	AESENC X9, X5     \
+	AESENC X10, X6    \
 	AESENC X11, X7
 
-	SUBQ $1, AX
-	JNZ  block_x4_rounds_loop
+block_x4_round(16)
+block_x4_round(32)
+block_x4_round(48)
+block_x4_round(64)
+block_x4_round(80)
+block_x4_round(96)
+block_x4_round(112)
+block_x4_round(128)
+block_x4_round(144)
+block_x4_round(160)
+block_x4_round(176)
+block_x4_round(192)
+block_x4_round(208)
+block_x4_round(224)
+block_x4_round(240)
+block_x4_round(256)
+
+#undef block_x4_round
 
 	PXOR X4, X15
 	PXOR X5, X15
@@ -319,21 +342,32 @@ block_x1_loop:
 	MOVOU (R11), X4 // X4 = plaintext
 	PXOR  X0, X8    // X8 ^= tk1
 	PXOR  X8, X4    // X4 ^= X8
-	MOVQ  R14, R9
 	ADDQ  $16, R11
 
-	MOVQ $16, AX
-
-block_x1_rounds_loop:
-	ADDQ $16, R9
-
-	MOVOU  (R9), X8 // X8 = tk2 ^ tk3 ^ rcon[i]
-	PSHUFB X14, X0  // X0 = h(tk1)
-	PXOR   X0, X8   // X8 ^= tk1
+#define block_x1_round(N) \
+	MOVOU  N(R14), X8 \ // X8 = tk2 ^ tk3 ^ rcon[i]
+	PSHUFB X14, X0    \ // X0 = h(tk1)
+	PXOR   X0, X8     \ // X8 ^= tk1
 	AESENC X8, X4
 
-	SUBQ $1, AX
-	JNZ  block_x1_rounds_loop
+block_x1_round(16)
+block_x1_round(32)
+block_x1_round(48)
+block_x1_round(64)
+block_x1_round(80)
+block_x1_round(96)
+block_x1_round(112)
+block_x1_round(128)
+block_x1_round(144)
+block_x1_round(160)
+block_x1_round(176)
+block_x1_round(192)
+block_x1_round(208)
+block_x1_round(224)
+block_x1_round(240)
+block_x1_round(256)
+
+#undef block_x1_round
 
 	PXOR X4, X15 // X15 ^= X4
 
@@ -402,32 +436,43 @@ block_x4_loop:
 	PXOR  X13, X5
 	PXOR  X13, X6
 	PXOR  X13, X7
-	MOVQ  R14, R8
 
-	MOVQ $16, AX
+#define block_x4_round(N) \
+	MOVOU  N(R14), X8 \
+	MOVO   X8, X9     \
+	MOVO   X8, X10    \
+	MOVO   X8, X11    \
+	PSHUFB X14, X0    \
+	PSHUFB X14, X1    \
+	PSHUFB X14, X2    \
+	PSHUFB X14, X3    \
+	PXOR   X0, X8     \
+	PXOR   X1, X9     \
+	PXOR   X2, X10    \
+	PXOR   X3, X11    \
+	AESENC X8, X4     \
+	AESENC X9, X5     \
+	AESENC X10, X6    \
+	AESENC X11, X7    \
 
-block_x4_rounds_loop:
-	ADDQ $16, R8
+block_x4_round(16)
+block_x4_round(32)
+block_x4_round(48)
+block_x4_round(64)
+block_x4_round(80)
+block_x4_round(96)
+block_x4_round(112)
+block_x4_round(128)
+block_x4_round(144)
+block_x4_round(160)
+block_x4_round(176)
+block_x4_round(192)
+block_x4_round(208)
+block_x4_round(224)
+block_x4_round(240)
+block_x4_round(256)
 
-	MOVOU  (R8), X8
-	MOVO   X8, X9
-	MOVO   X8, X10
-	MOVO   X8, X11
-	PSHUFB X14, X0
-	PSHUFB X14, X1
-	PSHUFB X14, X2
-	PSHUFB X14, X3
-	PXOR   X0, X8
-	PXOR   X1, X9
-	PXOR   X2, X10
-	PXOR   X3, X11
-	AESENC X8, X4
-	AESENC X9, X5
-	AESENC X10, X6
-	AESENC X11, X7
-
-	SUBQ $1, AX
-	JNZ  block_x4_rounds_loop
+#undef block_x4_round
 
 	MOVOU (R10), X8
 	MOVOU 16(R10), X9
@@ -469,20 +514,31 @@ block_x1_loop:
 	MOVO  X12, X4    // X4 = nonce
 	PXOR  X0, X13    // X13 ^= tk1
 	PXOR  X13, X4    // X4 ^= X13
-	MOVQ  R14, R8
 
-	MOVQ $16, AX
-
-block_x1_rounds_loop:
-	ADDQ $16, R8
-
-	PSHUFB X14, X0   // X0 = h(tk1)
-	MOVOU  (R8), X13 // X13 = tk2 ^ tk3 ^ rcon[i]
-	PXOR   X0, X13   // X13 ^= tk1
+#define block_x1_round(N) \
+	PSHUFB X14, X0     \ // X0 = h(tk1)
+	MOVOU  N(R14), X13 \ // X13 = tk2 ^ tk3 ^ rcon[i]
+	PXOR   X0, X13     \ // X13 ^= tk1
 	AESENC X13, X4
 
-	SUBQ $1, AX
-	JNZ  block_x1_rounds_loop
+block_x1_round(16)
+block_x1_round(32)
+block_x1_round(48)
+block_x1_round(64)
+block_x1_round(80)
+block_x1_round(96)
+block_x1_round(112)
+block_x1_round(128)
+block_x1_round(144)
+block_x1_round(160)
+block_x1_round(176)
+block_x1_round(192)
+block_x1_round(208)
+block_x1_round(224)
+block_x1_round(240)
+block_x1_round(256)
+
+#undef block_x1_round
 
 	MOVOU (R10), X8 // X8 = plaintext
 	PXOR  X4, X8    // X8 ^= X4
