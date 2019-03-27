@@ -49,7 +49,7 @@ func doBenchmarkAEADEncrypt(b *testing.B, sz int) {
 	_, _ = rand.Read(nonce)
 	_, _ = rand.Read(key)
 	_, _ = rand.Read(m)
-	aead := New(key)
+	aead, _ := New(key)
 
 	b.StartTimer()
 	for i := 0; i < b.N; i++ {
@@ -71,7 +71,7 @@ func doBenchmarkAEADDecrypt(b *testing.B, sz int) {
 	_, _ = rand.Read(nonce)
 	_, _ = rand.Read(key)
 	_, _ = rand.Read(m)
-	aead := New(key)
+	aead, _ := New(key)
 
 	c = aead.Seal(c, nonce, m, nil)
 	b.StartTimer()

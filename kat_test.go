@@ -41,7 +41,8 @@ func TestVectors(t *testing.T) {
 func doTestOfficialVectors(t *testing.T) {
 	require := require.New(t)
 	for _, tc := range officialTestVectors {
-		aead := New(tc.Key)
+		aead, err := New(tc.Key)
+		require.NoError(err, "aead.New()")
 		c := aead.Seal(nil, tc.Nonce, tc.Message, tc.AssociatedData)
 		require.Equal(tc.Sealed, c, "%s", tc.Name)
 	}
@@ -67,7 +68,8 @@ func doTestKAT(t *testing.T) {
 		n[i] = byte(255 & (i*181 + 123))
 	}
 
-	aead := New(k[:])
+	aead, err := New(k[:])
+	require.NoError(err, "aead.New()")
 	require.Equal(NonceSize, aead.NonceSize(), "aead.NonceSize()")
 	require.Equal(TagSize, aead.Overhead(), "aead.Overhead()")
 

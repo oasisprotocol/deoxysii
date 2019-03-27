@@ -29,7 +29,10 @@ var (
 	// fails durring an Open call.
 	ErrOpen = errors.New("deoxysii: message authentication failure")
 
-	errInvalidKeySize   = errors.New("deoxysii: invalid key size")
+	// ErrInvalidKeySize is the error returned when the key size is
+	// invalid
+	ErrInvalidKeySize = errors.New("deoxysii: invalid key size")
+
 	errInvalidNonceSize = errors.New("deoxysii: invalid nonce size")
 
 	impl api.Impl = ct64.Impl
@@ -113,15 +116,15 @@ func (aead *deoxysII) Reset() {
 
 // New creates a new cipher.AEAD instance backed by Deoxys-II-256-128
 // with the provided key.
-func New(key []byte) cipher.AEAD {
+func New(key []byte) (cipher.AEAD, error) {
 	if len(key) != KeySize {
-		panic(errInvalidKeySize)
+		return nil, ErrInvalidKeySize
 	}
 
 	aead := &deoxysII{}
 	impl.STKDeriveK(key, &aead.derivedKs)
 
-	return aead
+	return aead, nil
 }
 
 var _ cipher.AEAD = (*deoxysII)(nil)
