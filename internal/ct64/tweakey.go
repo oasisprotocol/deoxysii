@@ -1,6 +1,6 @@
 package ct64
 
-import "github.com/oasislabs/deoxys-ii/internal/api"
+import "github.com/oasislabs/deoxysii/internal/api"
 
 // Note: This is trivial to accelerate with vector ops.  Performance
 // will likely be horrific without such things.  At the point where

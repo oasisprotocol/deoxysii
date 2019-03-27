@@ -7,7 +7,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/oasislabs/deoxys-ii/internal/api"
+	"github.com/oasislabs/deoxysii/internal/api"
 )
 
 func mustDecodeHexString(s string) []byte {

@@ -7,9 +7,9 @@ import (
 	"crypto/cipher"
 	"errors"
 
-	"github.com/oasislabs/deoxys-ii/internal/api"
-	"github.com/oasislabs/deoxys-ii/internal/ct64"
-	"github.com/oasislabs/deoxys-ii/internal/hardware"
+	"github.com/oasislabs/deoxysii/internal/api"
+	"github.com/oasislabs/deoxysii/internal/ct64"
+	"github.com/oasislabs/deoxysii/internal/hardware"
 )
 
 const (

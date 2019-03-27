@@ -3,7 +3,7 @@
 package hardware
 
 import (
-	"github.com/oasislabs/deoxys-ii/internal/api"
+	"github.com/oasislabs/deoxysii/internal/api"
 )
 
 var Impl api.Impl

@@ -1,4 +1,4 @@
-module github.com/oasislabs/deoxys-ii
+module github.com/oasislabs/deoxysii
 
 replace git.schwanenlied.me/yawning/bsaes.git => github.com/yawning/bsaes v0.0.0-20190320102049-26d1add596b6
 

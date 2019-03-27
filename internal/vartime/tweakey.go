@@ -3,7 +3,7 @@ package vartime
 import (
 	"encoding/binary"
 
-	"github.com/oasislabs/deoxys-ii/internal/api"
+	"github.com/oasislabs/deoxysii/internal/api"
 )
 
 func deriveSubTweakKeys(stks *[api.STKCount][4]uint32, derivedKs *[api.STKCount][api.STKSize]byte, t *[api.TweakSize]byte) {

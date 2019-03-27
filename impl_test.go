@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/oasislabs/deoxys-ii/internal/api"
-	"github.com/oasislabs/deoxys-ii/internal/ct64"
-	"github.com/oasislabs/deoxys-ii/internal/hardware"
-	"github.com/oasislabs/deoxys-ii/internal/vartime"
+	"github.com/oasislabs/deoxysii/internal/api"
+	"github.com/oasislabs/deoxysii/internal/ct64"
+	"github.com/oasislabs/deoxysii/internal/hardware"
+	"github.com/oasislabs/deoxysii/internal/vartime"
 )
 
 var testImpls = []api.Impl{

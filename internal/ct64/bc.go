@@ -5,7 +5,7 @@ import (
 
 	aes "git.schwanenlied.me/yawning/bsaes.git/ct64"
 
-	"github.com/oasislabs/deoxys-ii/internal/api"
+	"github.com/oasislabs/deoxysii/internal/api"
 )
 
 func bcEncrypt(ciphertext []byte, derivedKs *[api.STKCount][api.STKSize]byte, tweak *[api.TweakSize]byte, plaintext []byte) {
