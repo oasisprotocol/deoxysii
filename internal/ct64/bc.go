@@ -14,12 +14,10 @@ func bcEncrypt(ciphertext []byte, derivedKs *[api.STKCount][api.STKSize]byte, tw
 
 	_, _ = plaintext[:api.BlockSize], ciphertext[:api.BlockSize]
 
-	for i := 0; i < api.BlockSize; i++ {
-		ciphertext[i] = plaintext[i] ^ stks[0][i]
-	}
-
 	var q, stk [8]uint64
-	aes.Load4xU32(&q, ciphertext)
+	aes.Load4xU32(&stk, stks[0][:])
+	aes.Load4xU32(&q, plaintext)
+	aes.AddRoundKey(&q, stk[:])
 
 	for i := 1; i <= api.Rounds; i++ {
 		aes.Sbox(&q)
