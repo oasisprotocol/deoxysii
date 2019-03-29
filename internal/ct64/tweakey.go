@@ -33,42 +33,46 @@ import (
 // there's a vector unit, it's worth doing a vectorized AES
 // implementation too.
 
-func deriveSubTweakKeysx1(stks *[api.STKCount][8]uint64, derivedKs *[api.STKCount][api.STKSize]byte, t *[api.TweakSize]byte) {
-	var tk1, tmp [api.STKSize]byte
+func derivedKsOrtho(dkQs *[api.STKCount][8]uint64, derivedKs *[api.STKCount][api.STKSize]byte) {
+	for i := 0; i <= api.Rounds; i++ {
+		aes.RkeyOrtho(dkQs[i][:], derivedKs[i][:])
+	}
+}
+
+func deriveSubTweakKeysx1(stks, dkQs *[api.STKCount][8]uint64, t *[api.TweakSize]byte) {
+	var tk1 [api.STKSize]byte
 
 	copy(tk1[:], t[:])
-	api.XORBytes(tmp[:], derivedKs[0][:], tk1[:], api.STKSize)
-	aes.Load4xU32(&stks[0], tmp[:])
+	aes.Load4xU32(&stks[0], tk1[:])
+	aes.AddRoundKey(&stks[0], dkQs[0][:])
 
 	for i := 1; i <= api.Rounds; i++ {
 		api.H(&tk1)
-		api.XORBytes(tmp[:], derivedKs[i][:], tk1[:], api.STKSize)
-		aes.Load4xU32(&stks[i], tmp[:])
+		aes.Load4xU32(&stks[i], tk1[:])
+		aes.AddRoundKey(&stks[i], dkQs[i][:])
 	}
 
 	api.Bzero(tk1[:])
-	api.Bzero(tmp[:])
 }
 
-func deriveSubTweakKeysx4(stks *[api.STKCount][8]uint64, derivedKs *[api.STKCount][api.STKSize]byte, t *[4][api.TweakSize]byte) {
-	var tk1, tmp [4][api.STKSize]byte
+func deriveSubTweakKeysx4(stks, dkQs *[api.STKCount][8]uint64, t *[4][api.TweakSize]byte) {
+	var tk1 [4][api.STKSize]byte
 
 	for i := range t {
 		copy(tk1[i][:], t[i][:])
-		api.XORBytes(tmp[i][:], derivedKs[0][:], tk1[i][:], api.STKSize)
 	}
-	aes.Load16xU32(&stks[0], tmp[0][:], tmp[1][:], tmp[2][:], tmp[3][:])
+	aes.Load16xU32(&stks[0], tk1[0][:], tk1[1][:], tk1[2][:], tk1[3][:])
+	aes.AddRoundKey(&stks[0], dkQs[0][:])
 
 	for i := 1; i <= api.Rounds; i++ {
 		for j := range t {
 			api.H(&tk1[j])
-			api.XORBytes(tmp[j][:], derivedKs[i][:], tk1[j][:], api.STKSize)
 		}
-		aes.Load16xU32(&stks[i], tmp[0][:], tmp[1][:], tmp[2][:], tmp[3][:])
+		aes.Load16xU32(&stks[i], tk1[0][:], tk1[1][:], tk1[2][:], tk1[3][:])
+		aes.AddRoundKey(&stks[i], dkQs[i][:])
 	}
 
 	for i := range t {
 		api.Bzero(tk1[i][:])
-		api.Bzero(tmp[i][:])
 	}
 }

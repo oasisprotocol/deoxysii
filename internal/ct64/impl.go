@@ -48,10 +48,12 @@ func (impl *ct64Impl) STKDeriveK(key []byte, derivedKs *[api.STKCount][api.STKSi
 
 func (impl *ct64Impl) E(derivedKs *[api.STKCount][api.STKSize]byte, nonce, dst, ad, msg []byte) {
 	var (
-		stks   [api.STKCount][8]uint64
-		tweaks [4][api.TweakSize]byte
-		i, j   int
+		stks, dkQs [api.STKCount][8]uint64
+		tweaks     [4][api.TweakSize]byte
+		i, j       int
 	)
+
+	derivedKsOrtho(&dkQs, derivedKs)
 
 	// Associated data.
 	adLen := len(ad)
@@ -62,14 +64,14 @@ func (impl *ct64Impl) E(derivedKs *[api.STKCount][api.STKSize]byte, nonce, dst, 
 		api.EncodeTagTweak(&tweaks[2], api.PrefixADBlock, i+2)
 		api.EncodeTagTweak(&tweaks[3], api.PrefixADBlock, i+3)
 
-		deriveSubTweakKeysx4(&stks, derivedKs, &tweaks)
+		deriveSubTweakKeysx4(&stks, &dkQs, &tweaks)
 		bcTagx4(auth[:], &stks, ad[i*api.BlockSize:])
 		adLen -= 4 * api.BlockSize
 	}
 	for ; adLen >= api.BlockSize; i++ {
 		api.EncodeTagTweak(&tweaks[0], api.PrefixADBlock, i)
 
-		deriveSubTweakKeysx1(&stks, derivedKs, &tweaks[0])
+		deriveSubTweakKeysx1(&stks, &dkQs, &tweaks[0])
 		bcTagx1(auth[:], &stks, ad[i*api.BlockSize:])
 		adLen -= api.BlockSize
 	}
@@ -80,7 +82,7 @@ func (impl *ct64Impl) E(derivedKs *[api.STKCount][api.STKSize]byte, nonce, dst, 
 		copy(aStar[:], ad[len(ad)-adLen:])
 		aStar[adLen] = 0x80
 
-		deriveSubTweakKeysx1(&stks, derivedKs, &tweaks[0])
+		deriveSubTweakKeysx1(&stks, &dkQs, &tweaks[0])
 		bcTagx1(auth[:], &stks, aStar[:])
 	}
 
@@ -93,14 +95,14 @@ func (impl *ct64Impl) E(derivedKs *[api.STKCount][api.STKSize]byte, nonce, dst, 
 		api.EncodeTagTweak(&tweaks[2], api.PrefixMsgBlock, j+2)
 		api.EncodeTagTweak(&tweaks[3], api.PrefixMsgBlock, j+3)
 
-		deriveSubTweakKeysx4(&stks, derivedKs, &tweaks)
+		deriveSubTweakKeysx4(&stks, &dkQs, &tweaks)
 		bcTagx4(auth[:], &stks, msg[j*api.BlockSize:])
 		msgLen -= 4 * api.BlockSize
 	}
 	for ; msgLen >= api.BlockSize; j++ {
 		api.EncodeTagTweak(&tweaks[0], api.PrefixMsgBlock, j)
 
-		deriveSubTweakKeysx1(&stks, derivedKs, &tweaks[0])
+		deriveSubTweakKeysx1(&stks, &dkQs, &tweaks[0])
 		bcTagx1(tag, &stks, msg[j*api.BlockSize:])
 		msgLen -= api.BlockSize
 	}
@@ -111,7 +113,7 @@ func (impl *ct64Impl) E(derivedKs *[api.STKCount][api.STKSize]byte, nonce, dst, 
 		copy(mStar[:], msg[len(msg)-msgLen:])
 		mStar[msgLen] = 0x80
 
-		deriveSubTweakKeysx1(&stks, derivedKs, &tweaks[0])
+		deriveSubTweakKeysx1(&stks, &dkQs, &tweaks[0])
 		bcTagx1(tag, &stks, mStar[:])
 	}
 
@@ -119,7 +121,7 @@ func (impl *ct64Impl) E(derivedKs *[api.STKCount][api.STKSize]byte, nonce, dst, 
 	var encNonce [api.BlockSize]byte
 	copy(encNonce[1:], nonce)
 	encNonce[0] = api.PrefixTag << api.PrefixShift
-	deriveSubTweakKeysx1(&stks, derivedKs, &encNonce)
+	deriveSubTweakKeysx1(&stks, &dkQs, &encNonce)
 	bcEncrypt(tag, &stks, tag)
 
 	// Message encryption.
@@ -134,7 +136,7 @@ func (impl *ct64Impl) E(derivedKs *[api.STKCount][api.STKSize]byte, nonce, dst, 
 		api.EncodeEncTweak(&tweaks[2], tag, j+2)
 		api.EncodeEncTweak(&tweaks[3], tag, j+3)
 
-		deriveSubTweakKeysx4(&stks, derivedKs, &tweaks)
+		deriveSubTweakKeysx4(&stks, &dkQs, &tweaks)
 		bcKeystreamx4(encBlks[:], &stks, &encNonce)
 		api.XORBytes(c[j*api.BlockSize:], msg[j*api.BlockSize:], encBlks[:], len(encBlks))
 		msgLen -= 4 * api.BlockSize
@@ -142,7 +144,7 @@ func (impl *ct64Impl) E(derivedKs *[api.STKCount][api.STKSize]byte, nonce, dst, 
 	for ; msgLen >= api.BlockSize; j++ {
 		api.EncodeEncTweak(&tweaks[0], tag, j)
 
-		deriveSubTweakKeysx1(&stks, derivedKs, &tweaks[0])
+		deriveSubTweakKeysx1(&stks, &dkQs, &tweaks[0])
 		bcEncrypt(encBlks[:api.BlockSize], &stks, encNonce[:])
 		api.XORBytes(c[j*api.BlockSize:], msg[j*api.BlockSize:], encBlks[:api.BlockSize], api.BlockSize)
 		msgLen -= api.BlockSize
@@ -150,7 +152,7 @@ func (impl *ct64Impl) E(derivedKs *[api.STKCount][api.STKSize]byte, nonce, dst, 
 	if msgLen > 0 {
 		api.EncodeEncTweak(&tweaks[0], tag, j)
 
-		deriveSubTweakKeysx1(&stks, derivedKs, &tweaks[0])
+		deriveSubTweakKeysx1(&stks, &dkQs, &tweaks[0])
 		bcEncrypt(encBlks[:api.BlockSize], &stks, encNonce[:])
 		api.XORBytes(c[j*api.BlockSize:], msg[j*api.BlockSize:], encBlks[:api.BlockSize], msgLen)
 	}
@@ -159,6 +161,7 @@ func (impl *ct64Impl) E(derivedKs *[api.STKCount][api.STKSize]byte, nonce, dst, 
 	copy(dst[len(dst)-api.TagSize:], tag)
 
 	bzeroStks(&stks)
+	bzeroStks(&dkQs)
 }
 
 func (impl *ct64Impl) D(derivedKs *[api.STKCount][api.STKSize]byte, nonce, dst, ad, ct []byte) bool {
@@ -167,11 +170,13 @@ func (impl *ct64Impl) D(derivedKs *[api.STKCount][api.STKSize]byte, nonce, dst, 
 	ciphertext, tag := ct[:ctLen], ct[ctLen:]
 
 	var (
-		stks     [api.STKCount][8]uint64
-		tweaks   [4][api.TweakSize]byte
-		decNonce [api.BlockSize]byte
-		j        int
+		stks, dkQs [api.STKCount][8]uint64
+		tweaks     [4][api.TweakSize]byte
+		decNonce   [api.BlockSize]byte
+		j          int
 	)
+
+	derivedKsOrtho(&dkQs, derivedKs)
 
 	// Message decryption.
 	copy(decNonce[1:], nonce)
@@ -183,7 +188,7 @@ func (impl *ct64Impl) D(derivedKs *[api.STKCount][api.STKSize]byte, nonce, dst, 
 		api.EncodeEncTweak(&decTweaks[2], tag, j+2)
 		api.EncodeEncTweak(&decTweaks[3], tag, j+3)
 
-		deriveSubTweakKeysx4(&stks, derivedKs, &decTweaks)
+		deriveSubTweakKeysx4(&stks, &dkQs, &decTweaks)
 		bcKeystreamx4(decBlks[:], &stks, &decNonce)
 		api.XORBytes(dst[j*api.BlockSize:], ciphertext[j*api.BlockSize:], decBlks[:], len(decBlks))
 		ctLen -= 4 * api.BlockSize
@@ -191,7 +196,7 @@ func (impl *ct64Impl) D(derivedKs *[api.STKCount][api.STKSize]byte, nonce, dst, 
 	for ; ctLen >= api.BlockSize; j++ {
 		api.EncodeEncTweak(&decTweaks[0], tag, j)
 
-		deriveSubTweakKeysx1(&stks, derivedKs, &decTweaks[0])
+		deriveSubTweakKeysx1(&stks, &dkQs, &decTweaks[0])
 		bcEncrypt(decBlks[:api.BlockSize], &stks, decNonce[:])
 		api.XORBytes(dst[j*api.BlockSize:], ciphertext[j*api.BlockSize:], decBlks[:api.BlockSize], api.BlockSize)
 		ctLen -= api.BlockSize
@@ -199,7 +204,7 @@ func (impl *ct64Impl) D(derivedKs *[api.STKCount][api.STKSize]byte, nonce, dst, 
 	if ctLen > 0 {
 		api.EncodeEncTweak(&decTweaks[0], tag, j)
 
-		deriveSubTweakKeysx1(&stks, derivedKs, &decTweaks[0])
+		deriveSubTweakKeysx1(&stks, &dkQs, &decTweaks[0])
 		bcEncrypt(decBlks[:api.BlockSize], &stks, decNonce[:])
 		api.XORBytes(dst[j*api.BlockSize:], ciphertext[j*api.BlockSize:], decBlks[:api.BlockSize], ctLen)
 	}
@@ -216,14 +221,14 @@ func (impl *ct64Impl) D(derivedKs *[api.STKCount][api.STKSize]byte, nonce, dst, 
 		api.EncodeTagTweak(&tweaks[2], api.PrefixADBlock, i+2)
 		api.EncodeTagTweak(&tweaks[3], api.PrefixADBlock, i+3)
 
-		deriveSubTweakKeysx4(&stks, derivedKs, &tweaks)
+		deriveSubTweakKeysx4(&stks, &dkQs, &tweaks)
 		bcTagx4(auth[:], &stks, ad[i*api.BlockSize:])
 		adLen -= 4 * api.BlockSize
 	}
 	for ; adLen >= api.BlockSize; i++ {
 		api.EncodeTagTweak(&tweaks[0], api.PrefixADBlock, i)
 
-		deriveSubTweakKeysx1(&stks, derivedKs, &tweaks[0])
+		deriveSubTweakKeysx1(&stks, &dkQs, &tweaks[0])
 		bcTagx1(auth[:], &stks, ad[i*api.BlockSize:])
 		adLen -= api.BlockSize
 	}
@@ -234,7 +239,7 @@ func (impl *ct64Impl) D(derivedKs *[api.STKCount][api.STKSize]byte, nonce, dst, 
 		copy(aStar[:], ad[len(ad)-adLen:])
 		aStar[adLen] = 0x80
 
-		deriveSubTweakKeysx1(&stks, derivedKs, &tweaks[0])
+		deriveSubTweakKeysx1(&stks, &dkQs, &tweaks[0])
 		bcTagx1(auth[:], &stks, aStar[:])
 	}
 
@@ -247,14 +252,14 @@ func (impl *ct64Impl) D(derivedKs *[api.STKCount][api.STKSize]byte, nonce, dst, 
 		api.EncodeTagTweak(&tweaks[2], api.PrefixMsgBlock, j+2)
 		api.EncodeTagTweak(&tweaks[3], api.PrefixMsgBlock, j+3)
 
-		deriveSubTweakKeysx4(&stks, derivedKs, &tweaks)
+		deriveSubTweakKeysx4(&stks, &dkQs, &tweaks)
 		bcTagx4(auth[:], &stks, dst[j*api.BlockSize:])
 		msgLen -= 4 * api.BlockSize
 	}
 	for ; msgLen >= api.BlockSize; j++ {
 		api.EncodeTagTweak(&tweaks[0], api.PrefixMsgBlock, j)
 
-		deriveSubTweakKeysx1(&stks, derivedKs, &tweaks[0])
+		deriveSubTweakKeysx1(&stks, &dkQs, &tweaks[0])
 		bcTagx1(tagP, &stks, dst[j*api.BlockSize:])
 		msgLen -= api.BlockSize
 	}
@@ -265,16 +270,17 @@ func (impl *ct64Impl) D(derivedKs *[api.STKCount][api.STKSize]byte, nonce, dst, 
 		copy(mStar[:], dst[len(dst)-msgLen:])
 		mStar[msgLen] = 0x80
 
-		deriveSubTweakKeysx1(&stks, derivedKs, &tweaks[0])
+		deriveSubTweakKeysx1(&stks, &dkQs, &tweaks[0])
 		bcTagx1(tagP, &stks, mStar[:])
 	}
 
 	// Generate the re-calculated tag.
 	decNonce[0] = api.PrefixTag << api.PrefixShift
-	deriveSubTweakKeysx1(&stks, derivedKs, &decNonce)
+	deriveSubTweakKeysx1(&stks, &dkQs, &decNonce)
 	bcEncrypt(tagP, &stks, tagP)
 
 	bzeroStks(&stks)
+	bzeroStks(&dkQs)
 
 	// Tag verification.
 	return subtle.ConstantTimeCompare(tag, tagP) == 1
