@@ -130,9 +130,7 @@ func (aead *deoxysII) Open(dst, nonce, ciphertext, additionalData []byte) ([]byt
 // remains in memory.
 func (aead *deoxysII) Reset() {
 	for i := range aead.derivedKs {
-		for j := range aead.derivedKs[i] {
-			aead.derivedKs[i][j] = 0
-		}
+		api.Bzero(aead.derivedKs[i][:])
 	}
 }
 

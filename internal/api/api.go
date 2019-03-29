@@ -95,3 +95,9 @@ func EncodeEncTweak(out *[TweakSize]byte, tag []byte, blockNr int) {
 	out[0] |= 0x80
 	XORBytes(out[8:], out[8:], tmp[:], 8)
 }
+
+func Bzero(b []byte) {
+	for i := range b {
+		b[i] = 0
+	}
+}
