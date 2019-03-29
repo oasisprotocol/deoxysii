@@ -39,9 +39,6 @@ TEXT ·cpuid(SB), NOSPLIT, $0-8
 //
 // SSSE3 + AES-NI implementation.
 //
-// TODO:
-//  * Spill state onto the stack and process 8 blocks at a time.
-//
 
 //
 // Constants, masks, etc.
