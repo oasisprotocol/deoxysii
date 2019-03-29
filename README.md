@@ -16,7 +16,7 @@ This package provides a "from-the-paper" implementation of the
 #### Notes
 
 Performance for the AES-NI implementation still has room for improvement,
-however given that the Deoxys-BC-385 tweakable block cipher has 3 more
+however given that the Deoxys-BC-384 tweakable block cipher has 3 more
 rounds than AES-256, and Deoxys-II will do two passes over the data
 payload, it is likely reasonably close to what can be expected.
 
