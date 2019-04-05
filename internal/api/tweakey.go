@@ -99,4 +99,7 @@ func STKDeriveK(key []byte, derivedKs *[STKCount][STKSize]byte) {
 		XORBytes(derivedKs[i][:], tk2[:], tk3[:], STKSize)
 		xorRC(&derivedKs[i], i)
 	}
+
+	Bzero(tk2[:])
+	Bzero(tk3[:])
 }
