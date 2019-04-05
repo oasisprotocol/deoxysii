@@ -21,7 +21,7 @@
 // SOFTWARE.
 
 // Package vartime provides a insecure/slow variable time Deoxys-II-256-128
-// instementation.
+// implementation.
 //
 // WARNING: THIS IMPLEMENTATION MUST NOT BE USED FOR ANYTHING REQUIRING
 // ACTUAL SECURITY.
