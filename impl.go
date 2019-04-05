@@ -126,8 +126,8 @@ func (aead *deoxysII) Open(dst, nonce, ciphertext, additionalData []byte) ([]byt
 	return ret, nil
 }
 
-// Reset clears the AEAD instance such that no sensitive keying material
-// remains in memory.
+// Reset attempts to clear the AEAD instance such that no sensitive keying
+// material remains in memory.
 func (aead *deoxysII) Reset() {
 	for i := range aead.derivedKs {
 		api.Bzero(aead.derivedKs[i][:])
