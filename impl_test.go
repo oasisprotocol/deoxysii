@@ -34,19 +34,19 @@ import (
 	"github.com/oasislabs/deoxysii/internal/vartime"
 )
 
-var testImpls = []api.Impl{
-	ct64.Impl,
-	vartime.Impl,
+var testFactories = []api.Factory{
+	ct64.Factory,
+	vartime.Factory,
 }
 
 func BenchmarkDeoxysII(b *testing.B) {
-	oldImpl := impl
+	oldFactory := factory
 	defer func() {
-		impl = oldImpl
+		factory = oldFactory
 	}()
 
-	for _, testImpl := range testImpls {
-		impl = testImpl
+	for _, testFactory := range testFactories {
+		factory = testFactory
 		doBenchmarkDeoxysII(b)
 	}
 }
@@ -55,7 +55,7 @@ func doBenchmarkDeoxysII(b *testing.B) {
 	benchSizes := []int{8, 32, 64, 576, 1536, 4096, 1024768}
 
 	for _, sz := range benchSizes {
-		bn := "DeoxysII_" + impl.Name() + "_"
+		bn := "DeoxysII_" + factory.Name() + "_"
 		sn := fmt.Sprintf("_%d", sz)
 		b.Run(bn+"Encrypt"+sn, func(b *testing.B) { doBenchmarkAEADEncrypt(b, sz) })
 		b.Run(bn+"Decrypt"+sn, func(b *testing.B) { doBenchmarkAEADDecrypt(b, sz) })
@@ -114,7 +114,7 @@ func doBenchmarkAEADDecrypt(b *testing.B, sz int) {
 }
 
 func init() {
-	if hardware.Impl != nil {
-		testImpls = append([]api.Impl{hardware.Impl}, testImpls...)
+	if hardware.Factory != nil {
+		testFactories = append([]api.Factory{hardware.Factory}, testFactories...)
 	}
 }

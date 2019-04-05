@@ -33,7 +33,7 @@ import (
 )
 
 //
-// AMD64 SSSE3 + AES-NI implementation.
+// AMD64 SSSE3 + AES-NI instementation.
 //
 // The assembly uses the following instructions over SSE2:
 //  * PSHUFB (SSSE3)
@@ -52,17 +52,29 @@ func bcTag(tag *[16]byte, derivedKs *[api.STKCount][api.STKSize]byte, prefix byt
 //go:noescape
 func bcXOR(ciphertext *byte, derivedKs *[api.STKCount][api.STKSize]byte, tag *[16]byte, blockNr int, nonce *[16]byte, plaintext *byte, n int)
 
-type aesniImpl struct{}
+type aesniFactory struct{}
 
-func (impl *aesniImpl) Name() string {
+func (f *aesniFactory) Name() string {
 	return "aesni"
 }
 
-func (impl *aesniImpl) STKDeriveK(key []byte, derivedKs *[api.STKCount][api.STKSize]byte) {
-	stkDeriveK(&key[0], derivedKs)
+func (f *aesniFactory) New(key []byte) api.Instance {
+	var inner aesniInstance
+	stkDeriveK(&key[0], &inner.derivedKs)
+	return &inner
 }
 
-func (impl *aesniImpl) E(derivedKs *[api.STKCount][api.STKSize]byte, nonce, dst, ad, msg []byte) {
+type aesniInstance struct {
+	derivedKs [api.STKCount][api.STKSize]byte
+}
+
+func (inst *aesniInstance) Reset() {
+	for i := range inst.derivedKs {
+		api.Bzero(inst.derivedKs[i][:])
+	}
+}
+
+func (inst *aesniInstance) E(nonce, dst, ad, msg []byte) {
 	var (
 		auth [api.TagSize]byte
 		i    int
@@ -71,7 +83,7 @@ func (impl *aesniImpl) E(derivedKs *[api.STKCount][api.STKSize]byte, nonce, dst,
 	// Associated data
 	adLen := len(ad)
 	if fullBlocks := adLen / api.BlockSize; fullBlocks > 0 {
-		bcTag(&auth, derivedKs, api.PrefixADBlock, 0, &ad[0], fullBlocks)
+		bcTag(&auth, &inst.derivedKs, api.PrefixADBlock, 0, &ad[0], fullBlocks)
 		i += fullBlocks
 		adLen -= fullBlocks * api.BlockSize
 	}
@@ -80,14 +92,14 @@ func (impl *aesniImpl) E(derivedKs *[api.STKCount][api.STKSize]byte, nonce, dst,
 		copy(aStar[:], ad[len(ad)-adLen:])
 		aStar[adLen] = 0x80
 
-		bcTag(&auth, derivedKs, api.PrefixADFinal, i, &aStar[0], 1)
+		bcTag(&auth, &inst.derivedKs, api.PrefixADFinal, i, &aStar[0], 1)
 	}
 
 	// Message authentication and tag generation
 	msgLen := len(msg)
 	i = 0
 	if fullBlocks := msgLen / api.BlockSize; fullBlocks > 0 {
-		bcTag(&auth, derivedKs, api.PrefixMsgBlock, 0, &msg[0], fullBlocks)
+		bcTag(&auth, &inst.derivedKs, api.PrefixMsgBlock, 0, &msg[0], fullBlocks)
 		i += fullBlocks
 		msgLen -= fullBlocks * api.BlockSize
 	}
@@ -96,14 +108,14 @@ func (impl *aesniImpl) E(derivedKs *[api.STKCount][api.STKSize]byte, nonce, dst,
 		copy(mStar[:], msg[len(msg)-msgLen:])
 		mStar[msgLen] = 0x80
 
-		bcTag(&auth, derivedKs, api.PrefixMsgFinal, i, &mStar[0], 1)
+		bcTag(&auth, &inst.derivedKs, api.PrefixMsgFinal, i, &mStar[0], 1)
 	}
 
 	// 20. tag <- Ek(0001||0000||N, tag)
 	var encNonce [api.BlockSize]byte
 	copy(encNonce[1:], nonce)
 	encNonce[0] = api.PrefixTag << api.PrefixShift
-	bcEncrypt(&auth, derivedKs, &encNonce, &auth)
+	bcEncrypt(&auth, &inst.derivedKs, &encNonce, &auth)
 
 	// Message encryption
 	var encTag [api.TagSize]byte
@@ -113,7 +125,7 @@ func (impl *aesniImpl) E(derivedKs *[api.STKCount][api.STKSize]byte, nonce, dst,
 
 	msgLen, i = len(msg), 0
 	if fullBlocks := msgLen / api.BlockSize; fullBlocks > 0 {
-		bcXOR(&dst[0], derivedKs, &encTag, 0, &encNonce, &msg[0], fullBlocks)
+		bcXOR(&dst[0], &inst.derivedKs, &encTag, 0, &encNonce, &msg[0], fullBlocks)
 		i += fullBlocks
 		msgLen -= fullBlocks * api.BlockSize
 	}
@@ -121,7 +133,7 @@ func (impl *aesniImpl) E(derivedKs *[api.STKCount][api.STKSize]byte, nonce, dst,
 		var tmp [api.BlockSize]byte
 
 		copy(tmp[:], msg[i*16:])
-		bcXOR(&tmp[0], derivedKs, &encTag, i, &encNonce, &tmp[0], 1)
+		bcXOR(&tmp[0], &inst.derivedKs, &encTag, i, &encNonce, &tmp[0], 1)
 		copy(dst[i*16:], tmp[:])
 	}
 
@@ -129,7 +141,7 @@ func (impl *aesniImpl) E(derivedKs *[api.STKCount][api.STKSize]byte, nonce, dst,
 	copy(dst[len(dst)-api.TagSize:], auth[:])
 }
 
-func (impl *aesniImpl) D(derivedKs *[api.STKCount][api.STKSize]byte, nonce, dst, ad, ct []byte) bool {
+func (inst *aesniInstance) D(nonce, dst, ad, ct []byte) bool {
 	// Split out ct into ciphertext and tag.
 	ctLen := len(ct) - api.TagSize
 	ciphertext, tag := ct[:ctLen], ct[ctLen:]
@@ -144,7 +156,7 @@ func (impl *aesniImpl) D(derivedKs *[api.STKCount][api.STKSize]byte, nonce, dst,
 	copy(decTag[:], tag)
 	decTag[0] |= 0x80
 	if fullBlocks := ctLen / api.BlockSize; fullBlocks > 0 {
-		bcXOR(&dst[0], derivedKs, &decTag, 0, &decNonce, &ciphertext[0], fullBlocks)
+		bcXOR(&dst[0], &inst.derivedKs, &decTag, 0, &decNonce, &ciphertext[0], fullBlocks)
 		i += fullBlocks
 		ctLen -= fullBlocks * api.BlockSize
 	}
@@ -152,7 +164,7 @@ func (impl *aesniImpl) D(derivedKs *[api.STKCount][api.STKSize]byte, nonce, dst,
 		var tmp [api.BlockSize]byte
 
 		copy(tmp[:], ciphertext[i*16:])
-		bcXOR(&tmp[0], derivedKs, &decTag, i, &decNonce, &tmp[0], 1)
+		bcXOR(&tmp[0], &inst.derivedKs, &decTag, i, &decNonce, &tmp[0], 1)
 		copy(dst[i*16:], tmp[:])
 	}
 
@@ -161,7 +173,7 @@ func (impl *aesniImpl) D(derivedKs *[api.STKCount][api.STKSize]byte, nonce, dst,
 	adLen := len(ad)
 	i = 0
 	if fullBlocks := adLen / api.BlockSize; fullBlocks > 0 {
-		bcTag(&auth, derivedKs, api.PrefixADBlock, i, &ad[0], fullBlocks)
+		bcTag(&auth, &inst.derivedKs, api.PrefixADBlock, i, &ad[0], fullBlocks)
 		i += fullBlocks
 		adLen -= fullBlocks * api.BlockSize
 	}
@@ -170,14 +182,14 @@ func (impl *aesniImpl) D(derivedKs *[api.STKCount][api.STKSize]byte, nonce, dst,
 		copy(aStar[:], ad[len(ad)-adLen:])
 		aStar[adLen] = 0x80
 
-		bcTag(&auth, derivedKs, api.PrefixADFinal, i, &aStar[0], 1)
+		bcTag(&auth, &inst.derivedKs, api.PrefixADFinal, i, &aStar[0], 1)
 	}
 
 	// Message authentication and tag generation.
 	msgLen := len(dst)
 	i = 0
 	if fullBlocks := msgLen / api.BlockSize; fullBlocks > 0 {
-		bcTag(&auth, derivedKs, api.PrefixMsgBlock, i, &dst[0], fullBlocks)
+		bcTag(&auth, &inst.derivedKs, api.PrefixMsgBlock, i, &dst[0], fullBlocks)
 		i += fullBlocks
 		msgLen -= fullBlocks * api.BlockSize
 	}
@@ -186,12 +198,12 @@ func (impl *aesniImpl) D(derivedKs *[api.STKCount][api.STKSize]byte, nonce, dst,
 		copy(mStar[:], dst[len(dst)-msgLen:])
 		mStar[msgLen] = 0x80
 
-		bcTag(&auth, derivedKs, api.PrefixMsgFinal, i, &mStar[0], 1)
+		bcTag(&auth, &inst.derivedKs, api.PrefixMsgFinal, i, &mStar[0], 1)
 	}
 
 	// 29. tag' <- Ek(0001||0000||N, tag')
 	decNonce[0] = api.PrefixTag << api.PrefixShift
-	bcEncrypt(&auth, derivedKs, &decNonce, &auth)
+	bcEncrypt(&auth, &inst.derivedKs, &decNonce, &auth)
 
 	// Tag verification.
 	return subtle.ConstantTimeCompare(tag, auth[:]) == 1
@@ -199,7 +211,7 @@ func (impl *aesniImpl) D(derivedKs *[api.STKCount][api.STKSize]byte, nonce, dst,
 
 func init() {
 	if cpu.X86.HasSSSE3 && cpu.X86.HasAES {
-		// Set the hardware impl.
-		Impl = &aesniImpl{}
+		// Set the hardware inst.
+		Factory = &aesniFactory{}
 	}
 }

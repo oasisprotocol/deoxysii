@@ -28,4 +28,4 @@ import (
 	"github.com/oasislabs/deoxysii/internal/api"
 )
 
-var Impl api.Impl
+var Factory api.Factory

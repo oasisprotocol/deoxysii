@@ -57,11 +57,11 @@ var (
 
 	errInvalidNonceSize = errors.New("deoxysii: invalid nonce size")
 
-	impl api.Impl = ct64.Impl
+	factory api.Factory = ct64.Factory
 )
 
 type deoxysII struct {
-	derivedKs [api.STKCount][api.STKSize]byte
+	inner api.Instance
 }
 
 // NonceSize returns the size of the nonce that must be passed to Seal
@@ -89,7 +89,7 @@ func (aead *deoxysII) Seal(dst, nonce, plaintext, additionalData []byte) []byte 
 	}
 
 	ret, out := sliceForAppend(dst, len(plaintext)+TagSize)
-	impl.E(&aead.derivedKs, nonce, out, additionalData, plaintext)
+	aead.inner.E(nonce, out, additionalData, plaintext)
 
 	return ret
 }
@@ -114,7 +114,7 @@ func (aead *deoxysII) Open(dst, nonce, ciphertext, additionalData []byte) ([]byt
 	}
 
 	ret, out := sliceForAppend(dst, len(ciphertext)-TagSize)
-	ok := impl.D(&aead.derivedKs, nonce, out, additionalData, ciphertext)
+	ok := aead.inner.D(nonce, out, additionalData, ciphertext)
 	if !ok {
 		// Do not release unauthenticated plaintext.
 		for i := range out {
@@ -129,9 +129,7 @@ func (aead *deoxysII) Open(dst, nonce, ciphertext, additionalData []byte) ([]byt
 // Reset attempts to clear the AEAD instance such that no sensitive keying
 // material remains in memory.
 func (aead *deoxysII) Reset() {
-	for i := range aead.derivedKs {
-		api.Bzero(aead.derivedKs[i][:])
-	}
+	aead.inner.Reset()
 }
 
 // New creates a new cipher.AEAD instance backed by Deoxys-II-256-128
@@ -141,16 +139,15 @@ func New(key []byte) (cipher.AEAD, error) {
 		return nil, ErrInvalidKeySize
 	}
 
-	aead := &deoxysII{}
-	impl.STKDeriveK(key, &aead.derivedKs)
-
-	return aead, nil
+	return &deoxysII{
+		inner: factory.New(key),
+	}, nil
 }
 
 var _ cipher.AEAD = (*deoxysII)(nil)
 
 func init() {
-	if hardware.Impl != nil {
-		impl = hardware.Impl
+	if hardware.Factory != nil {
+		factory = hardware.Factory
 	}
 }

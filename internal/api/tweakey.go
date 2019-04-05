@@ -68,6 +68,14 @@ func xorRC(t *[STKSize]byte, i int) {
 	XORBytes(t[:], t[:], rc[:], 8)
 }
 
+// STKDeriveK derives the K component of the Sub-Tweak Key for each
+// round.  The derived partial STK is combined with the tweak to
+// produce each round key.
+//
+// For every single block encrypted or decrypted with a given key,
+// the per-round STK's contribution from the key is the same
+// (LFSR/permuted Tk2/Tk3), and can be calculated once, and
+// XORed into the permuted tweak per round.
 func STKDeriveK(key []byte, derivedKs *[STKCount][STKSize]byte) {
 	var tk2, tk3 [STKSize]byte
 
