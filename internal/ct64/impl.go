@@ -104,7 +104,6 @@ func (inst *ct64Instance) E(nonce, dst, ad, msg []byte) {
 
 	// Message authentication and tag generation.
 	msgLen := len(msg)
-	tag := auth[:]
 	for j = 0; msgLen >= 4*api.BlockSize; j += 4 {
 		api.EncodeTagTweak(&tweaks[0], api.PrefixMsgBlock, j)
 		api.EncodeTagTweak(&tweaks[1], api.PrefixMsgBlock, j+1)
@@ -119,7 +118,7 @@ func (inst *ct64Instance) E(nonce, dst, ad, msg []byte) {
 		api.EncodeTagTweak(&tweaks[0], api.PrefixMsgBlock, j)
 
 		deriveSubTweakKeysx1(&stks, &inst.derivedKQs, &tweaks[0])
-		bcTagx1(tag, &stks, msg[j*api.BlockSize:])
+		bcTagx1(auth[:], &stks, msg[j*api.BlockSize:])
 		msgLen -= api.BlockSize
 	}
 	if msgLen > 0 {
@@ -130,7 +129,7 @@ func (inst *ct64Instance) E(nonce, dst, ad, msg []byte) {
 		mStar[msgLen] = 0x80
 
 		deriveSubTweakKeysx1(&stks, &inst.derivedKQs, &tweaks[0])
-		bcTagx1(tag, &stks, mStar[:])
+		bcTagx1(auth[:], &stks, mStar[:])
 	}
 
 	// Generate the tag.
@@ -138,7 +137,7 @@ func (inst *ct64Instance) E(nonce, dst, ad, msg []byte) {
 	copy(encNonce[1:], nonce)
 	encNonce[0] = api.PrefixTag << api.PrefixShift
 	deriveSubTweakKeysx1(&stks, &inst.derivedKQs, &encNonce)
-	bcEncrypt(tag, &stks, tag)
+	bcEncrypt(auth[:], &stks, auth[:])
 
 	// Message encryption.
 	encNonce[0] = 0 // 0x00 || nonce
@@ -147,10 +146,10 @@ func (inst *ct64Instance) E(nonce, dst, ad, msg []byte) {
 	c := dst[0:]
 	msgLen = len(msg)
 	for j = 0; msgLen >= 4*api.BlockSize; j += 4 {
-		api.EncodeEncTweak(&tweaks[0], tag, j)
-		api.EncodeEncTweak(&tweaks[1], tag, j+1)
-		api.EncodeEncTweak(&tweaks[2], tag, j+2)
-		api.EncodeEncTweak(&tweaks[3], tag, j+3)
+		api.EncodeEncTweak(&tweaks[0], auth[:], j)
+		api.EncodeEncTweak(&tweaks[1], auth[:], j+1)
+		api.EncodeEncTweak(&tweaks[2], auth[:], j+2)
+		api.EncodeEncTweak(&tweaks[3], auth[:], j+3)
 
 		deriveSubTweakKeysx4(&stks, &inst.derivedKQs, &tweaks)
 		bcKeystreamx4(encBlks[:], &stks, &encNonce)
@@ -158,7 +157,7 @@ func (inst *ct64Instance) E(nonce, dst, ad, msg []byte) {
 		msgLen -= 4 * api.BlockSize
 	}
 	for ; msgLen >= api.BlockSize; j++ {
-		api.EncodeEncTweak(&tweaks[0], tag, j)
+		api.EncodeEncTweak(&tweaks[0], auth[:], j)
 
 		deriveSubTweakKeysx1(&stks, &inst.derivedKQs, &tweaks[0])
 		bcEncrypt(encBlks[:api.BlockSize], &stks, encNonce[:])
@@ -166,7 +165,7 @@ func (inst *ct64Instance) E(nonce, dst, ad, msg []byte) {
 		msgLen -= api.BlockSize
 	}
 	if msgLen > 0 {
-		api.EncodeEncTweak(&tweaks[0], tag, j)
+		api.EncodeEncTweak(&tweaks[0], auth[:], j)
 
 		deriveSubTweakKeysx1(&stks, &inst.derivedKQs, &tweaks[0])
 		bcEncrypt(encBlks[:api.BlockSize], &stks, encNonce[:])
@@ -174,7 +173,7 @@ func (inst *ct64Instance) E(nonce, dst, ad, msg []byte) {
 	}
 
 	// Append the tag.
-	copy(dst[len(dst)-api.TagSize:], tag)
+	copy(dst[len(dst)-api.TagSize:], auth[:])
 
 	bzeroStks(&stks)
 }
@@ -258,7 +257,6 @@ func (inst *ct64Instance) D(nonce, dst, ad, ct []byte) bool {
 
 	// Message authentication and tag generation.
 	msgLen := len(dst)
-	tagP := auth[:]
 	for j = 0; msgLen >= 4*api.BlockSize; j += 4 {
 		api.EncodeTagTweak(&tweaks[0], api.PrefixMsgBlock, j)
 		api.EncodeTagTweak(&tweaks[1], api.PrefixMsgBlock, j+1)
@@ -273,7 +271,7 @@ func (inst *ct64Instance) D(nonce, dst, ad, ct []byte) bool {
 		api.EncodeTagTweak(&tweaks[0], api.PrefixMsgBlock, j)
 
 		deriveSubTweakKeysx1(&stks, &inst.derivedKQs, &tweaks[0])
-		bcTagx1(tagP, &stks, dst[j*api.BlockSize:])
+		bcTagx1(auth[:], &stks, dst[j*api.BlockSize:])
 		msgLen -= api.BlockSize
 	}
 	if msgLen > 0 {
@@ -284,18 +282,18 @@ func (inst *ct64Instance) D(nonce, dst, ad, ct []byte) bool {
 		mStar[msgLen] = 0x80
 
 		deriveSubTweakKeysx1(&stks, &inst.derivedKQs, &tweaks[0])
-		bcTagx1(tagP, &stks, mStar[:])
+		bcTagx1(auth[:], &stks, mStar[:])
 	}
 
 	// Generate the re-calculated tag.
 	decNonce[0] = api.PrefixTag << api.PrefixShift
 	deriveSubTweakKeysx1(&stks, &inst.derivedKQs, &decNonce)
-	bcEncrypt(tagP, &stks, tagP)
+	bcEncrypt(auth[:], &stks, auth[:])
 
 	bzeroStks(&stks)
 
 	// Tag verification.
-	return subtle.ConstantTimeCompare(tag, tagP) == 1
+	return subtle.ConstantTimeCompare(tag, auth[:]) == 1
 }
 
 func bzeroStks(stks *[api.STKCount][8]uint64) {
