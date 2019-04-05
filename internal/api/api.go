@@ -45,32 +45,31 @@ const (
 	PrefixShift = 4
 )
 
-type Impl interface {
+type Factory interface {
 	// Name returns the name of the implementation.
 	Name() string
 
-	// STKDeriveK derives the K component of the Sub-Tweak Key for
-	// each round.  The derived partial STK is passed to E/D instead
-	// of the actual key.
-	//
-	// For every single block encrypted or decrypted with a given key,
-	// the per-round STK's contribution from the key is the same
-	// (LFSR/permuted Tk2/Tk3), and can be calculated once, and
-	// XORed into the permuted tweak per round.
-	STKDeriveK(key []byte, derivedKs *[STKCount][STKSize]byte)
+	// New constructs a new keyed instance.
+	New(key []byte) Instance
+}
 
-	// E authenticate and encrypts ad/msg with the partial STK/nonce,
-	// and writes ciphertext || tag to dst.
-	E(derivedKs *[STKCount][STKSize]byte, nonce, dst, ad, msg []byte)
+type Instance interface {
+	// Reset attempts to clear the instance of sensitive data.
+	Reset()
 
-	// D decrypts and authenticates ad/ct with the partial STK/nonce,
-	// and writes the plaintext to dst, and returns true iff theo
-	// authentication succeeds.
+	// E authenticate and encrypts ad/msg with the nonce, and writes
+	// ciphertext || tag to dst.
+	E(nonce, dst, ad, msg []byte)
+
+	// D decrypts and authenticates ad/ct with the nonce and writes
+	// the plaintext to dst, and returns true iff the authentication
+	// succeeds.
 	//
 	// Callers MUST scrub dst iff the call returns false.
 	//
 	// Note: dst is guaranteed NOT to alias with ct.
-	D(derviedKs *[STKCount][STKSize]byte, nonce, dst, ad, ct []byte) bool
+	D(nonce, dst, ad, ct []byte) bool
+
 }
 
 func XORBytes(out, a, b []byte, n int) {

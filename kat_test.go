@@ -30,8 +30,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-
-	"github.com/oasislabs/deoxysii/internal/api"
 )
 
 type knownAnswerTests struct {
@@ -59,19 +57,19 @@ func mustDecodeHexString(s string) []byte {
 }
 
 func TestVectors(t *testing.T) {
-	oldImpl := impl
+	oldFactory := factory
 	defer func() {
-		impl = oldImpl
+		factory = oldFactory
 	}()
 
 	// Known Answer Tests.
-	for _, testImpl := range testImpls {
-		t.Run("OfficialVectors_"+testImpl.Name(), func(t *testing.T) {
-			impl = testImpl
+	for _, testFactory := range testFactories {
+		t.Run("OfficialVectors_"+testFactory.Name(), func(t *testing.T) {
+			factory = testFactory
 			doTestOfficialVectors(t)
 		})
-		t.Run("KnownAnswerTest_"+testImpl.Name(), func(t *testing.T) {
-			impl = testImpl
+		t.Run("KnownAnswerTest_"+testFactory.Name(), func(t *testing.T) {
+			factory = testFactory
 			validateTestVectorJSON(t, "./testdata/Deoxys-II-256-128.json")
 		})
 	}
@@ -148,12 +146,6 @@ func validateTestVectorJSON(t *testing.T, fn string) {
 	}
 
 	require.Equal(expectedDst, dst, "Final concatenated ciphertexts")
-
-	// Ensure that Reset() appears to actually clear things.
-	var zeroDerivedKs [api.STKCount][api.STKSize]byte
-	inner := (aead).(*deoxysII)
-	inner.Reset()
-	require.Equal(zeroDerivedKs, inner.derivedKs, "Reset()")
 }
 
 // Official test vectors, adapted to have the final form of ciphertext || tag.
