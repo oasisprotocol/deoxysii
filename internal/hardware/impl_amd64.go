@@ -27,6 +27,8 @@ package hardware
 import (
 	"crypto/subtle"
 
+	"golang.org/x/sys/cpu"
+
 	"github.com/oasislabs/deoxysii/internal/api"
 )
 
@@ -37,9 +39,6 @@ import (
 //  * PSHUFB (SSSE3)
 //  * AESENC (AES-NI)
 //
-
-//go:noescape
-func cpuid(params *uint32)
 
 //go:noescape
 func stkDeriveK(key *byte, derivedKs *[api.STKCount][api.STKSize]byte)
@@ -198,26 +197,8 @@ func (impl *aesniImpl) D(derivedKs *[api.STKCount][api.STKSize]byte, nonce, dst,
 	return subtle.ConstantTimeCompare(tag, auth[:]) == 1
 }
 
-func cpuIsSupported() bool {
-	const (
-		ssse3Bit = 1 << 9
-		aesBit   = 1 << 25
-	)
-
-	regs := [4]uint32{0x01}
-	cpuid(&regs[0])
-	if regs[2]&ssse3Bit == 0 {
-		return false
-	}
-	if regs[2]&aesBit == 0 {
-		return false
-	}
-
-	return true
-}
-
 func init() {
-	if cpuIsSupported() {
+	if cpu.X86.HasSSSE3 && cpu.X86.HasAES {
 		// Set the hardware impl.
 		Impl = &aesniImpl{}
 	}
