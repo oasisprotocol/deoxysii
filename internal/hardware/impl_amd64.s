@@ -105,6 +105,27 @@ DATA ·one<>+0x00(SB)/8, $0x0000000000000001
 DATA ·one<>+0x08(SB)/8, $0x0000000000000000
 GLOBL ·one<>(SB), (NOPTR+RODATA), $16
 
+//
+// Obliterate XMM registers.
+//
+#define ZERO_XMM() \
+	PXOR X0, X0 \
+	PXOR X1, X1 \
+	PXOR X2, X2 \
+	PXOR X3, X3 \
+	PXOR X4, X4 \
+	PXOR X5, X5 \
+	PXOR X6, X6 \
+	PXOR X7, X7 \
+	PXOR X8, X8 \
+	PXOR X9, X9 \
+	PXOR X10, X10 \
+	PXOR X11, X11 \
+	PXOR X12, X12 \
+	PXOR X13, X13 \
+	PXOR X14, X14 \
+	PXOR X15, X15
+
 // Derive the Sub-Tweak Key 'K' component for each round from the key.
 //
 // func stkDeriveK(key *byte, derivedKs *[api.STKCount][api.STKSize]byte)
@@ -174,6 +195,7 @@ derive_stk_loop:
 	SUBQ $1, AX
 	JNZ  derive_stk_loop
 
+	ZERO_XMM()
 	RET
 
 // Encrypt 1 block of plaintext with derivedKs/tweak, store output in ciphertext.
@@ -222,6 +244,7 @@ block_x1_round(256)
 
 	MOVOU X15, (R15)
 
+	ZERO_XMM()
 	RET
 
 // Accumulate n blocks of plaintext with derivedKs/prefix/blockNr into tag.
@@ -384,6 +407,7 @@ block_x1_round(256)
 	MOVOU X15, (R15) // tag = X15
 
 out:
+	ZERO_XMM()
 	RET
 
 // XOR n block of keystream generated with key/tag/blockNr/nonce with plaintext
@@ -557,4 +581,5 @@ block_x1_round(256)
 	JNZ  block_x1_loop
 
 out:
+	ZERO_XMM()
 	RET
