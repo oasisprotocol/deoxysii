@@ -69,7 +69,6 @@ type Instance interface {
 	//
 	// Note: dst is guaranteed NOT to alias with ct.
 	D(nonce, dst, ad, ct []byte) bool
-
 }
 
 func XORBytes(out, a, b []byte, n int) {
