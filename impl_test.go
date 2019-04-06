@@ -29,6 +29,7 @@ import (
 	"testing"
 
 	"github.com/oasislabs/deoxysii/internal/api"
+	"github.com/oasislabs/deoxysii/internal/ct32"
 	"github.com/oasislabs/deoxysii/internal/ct64"
 	"github.com/oasislabs/deoxysii/internal/hardware"
 	"github.com/oasislabs/deoxysii/internal/vartime"
@@ -36,6 +37,7 @@ import (
 
 var testFactories = []api.Factory{
 	ct64.Factory,
+	ct32.Factory,
 	vartime.Factory,
 }
 

@@ -6,7 +6,9 @@ This package provides a "from-the-paper" implementation of the
 
 #### Implementations
 
- * (`ct64`) Portable constant time implementation (Extremely Slow).
+ * (`ct32`) Portable 32 bit constant time implementation (Extremely slow).
+
+ * (`ct64`) Portable 64 bit constant time implementation (Extremely slow).
 
  * (`aesni`) SSSE3 + AESNI implementation for `amd64`
 

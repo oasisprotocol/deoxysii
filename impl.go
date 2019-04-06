@@ -28,8 +28,10 @@ package deoxysii
 import (
 	"crypto/cipher"
 	"errors"
+	"strconv"
 
 	"github.com/oasislabs/deoxysii/internal/api"
+	"github.com/oasislabs/deoxysii/internal/ct32"
 	"github.com/oasislabs/deoxysii/internal/ct64"
 	"github.com/oasislabs/deoxysii/internal/hardware"
 )
@@ -57,7 +59,7 @@ var (
 
 	errInvalidNonceSize = errors.New("deoxysii: invalid nonce size")
 
-	factory api.Factory = ct64.Factory
+	factory api.Factory
 )
 
 type deoxysII struct {
@@ -149,5 +151,15 @@ var _ cipher.AEAD = (*deoxysII)(nil)
 func init() {
 	if hardware.Factory != nil {
 		factory = hardware.Factory
+		return
+	}
+
+	switch strconv.IntSize {
+	case 64:
+		factory = ct64.Factory
+	case 32:
+		factory = ct32.Factory
+	default:
+		panic("deoxysii: failed to pick implementation")
 	}
 }
