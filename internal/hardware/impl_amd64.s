@@ -105,27 +105,6 @@ DATA ·one<>+0x00(SB)/8, $0x0000000000000001
 DATA ·one<>+0x08(SB)/8, $0x0000000000000000
 GLOBL ·one<>(SB), (NOPTR+RODATA), $16
 
-//
-// Obliterate XMM registers.
-//
-#define ZERO_XMM() \
-	PXOR X0, X0 \
-	PXOR X1, X1 \
-	PXOR X2, X2 \
-	PXOR X3, X3 \
-	PXOR X4, X4 \
-	PXOR X5, X5 \
-	PXOR X6, X6 \
-	PXOR X7, X7 \
-	PXOR X8, X8 \
-	PXOR X9, X9 \
-	PXOR X10, X10 \
-	PXOR X11, X11 \
-	PXOR X12, X12 \
-	PXOR X13, X13 \
-	PXOR X14, X14 \
-	PXOR X15, X15
-
 // Derive the Sub-Tweak Key 'K' component for each round from the key.
 //
 // func stkDeriveK(key *byte, derivedKs *[api.STKCount][api.STKSize]byte)
@@ -195,7 +174,12 @@ derive_stk_loop:
 	SUBQ $1, AX
 	JNZ  derive_stk_loop
 
-	ZERO_XMM()
+	// Sanitize registers of key material.
+	PXOR X1, X1
+	PXOR X2, X2
+	PXOR X6, X6
+	PXOR X7, X7
+
 	RET
 
 // Encrypt 1 block of plaintext with derivedKs/tweak, store output in ciphertext.
@@ -216,13 +200,13 @@ TEXT ·bcEncrypt(SB), NOSPLIT|NOFRAME, $0-32
 	PXOR  X0, X14    // X14 ^= tk1
 	PXOR  X14, X15   // X15 ^= X14
 
+	// i == 1 ... i == 16
 #define block_x1_round(N) \
 	PSHUFB X13, X0     \ // X0 = h(tk1)
 	MOVOU  N(R14), X14 \ // X14 = tk2 ^ tk3 ^ rcon[i]
 	PXOR   X0, X14     \ // X14 ^= tk1
 	AESENC X14, X15
 
-// i == 1 ... i == 16
 block_x1_round(16)
 block_x1_round(32)
 block_x1_round(48)
@@ -244,7 +228,10 @@ block_x1_round(256)
 
 	MOVOU X15, (R15)
 
-	ZERO_XMM()
+	// Sanitize registers of key material.
+	PXOR X0, X0   // tk1
+	PXOR X14, X14 // AES round key
+
 	RET
 
 // Accumulate n blocks of plaintext with derivedKs/prefix/blockNr into tag.
@@ -353,6 +340,14 @@ block_x4_round(256)
 
 	MOVOU X15, (R15)
 
+	// Sanitize registers of key material (block 0 handled prior to return)
+	PXOR X1, X1   // tk1 (block 1)
+	PXOR X2, X2   // tk1 (block 2)
+	PXOR X3, X3   // tk1 (block 3)
+	PXOR X9, X9   // AES round key (block 1)
+	PXOR X10, X10 // AES round key (block 2)
+	PXOR X11, X11 // AES round key (block 3)
+
 block_x4_loop_skip:
 
 	//
@@ -407,7 +402,10 @@ block_x1_round(256)
 	MOVOU X15, (R15) // tag = X15
 
 out:
-	ZERO_XMM()
+	// Sanitize remaining registers of key material.
+	PXOR X0, X0 // tk1 (block 0)
+	PXOR X8, X8 // AES round key (block 0)
+
 	RET
 
 // XOR n block of keystream generated with key/tag/blockNr/nonce with plaintext
@@ -454,7 +452,7 @@ block_x4_loop:
 	PXOR   X15, X3
 	ADDQ   $4, R12
 
-	MOVOU (R14), X13
+	MOVOU (R14), X8
 	MOVO  X12, X4
 	MOVO  X12, X5
 	MOVO  X12, X6
@@ -463,10 +461,10 @@ block_x4_loop:
 	PXOR  X1, X5
 	PXOR  X2, X6
 	PXOR  X3, X7
-	PXOR  X13, X4
-	PXOR  X13, X5
-	PXOR  X13, X6
-	PXOR  X13, X7
+	PXOR  X8, X4
+	PXOR  X8, X5
+	PXOR  X8, X6
+	PXOR  X8, X7
 
 #define block_x4_round(N) \
 	MOVOU  N(R14), X8 \
@@ -524,6 +522,11 @@ block_x4_round(256)
 	CMPQ R9, $4
 	JG   block_x4_loop
 
+	// Sanitize registers of key material (block 0 handled prior to return)
+	PXOR X1, X1 // tk1 (block 1)
+	PXOR X2, X2 // tk1 (block 2)
+	PXOR X3, X3 // tk1 (block 3)
+
 block_x4_loop_skip:
 
 	//
@@ -541,16 +544,16 @@ block_x1_loop:
 	PXOR   X15, X0 // X0 ^= tag(tk)
 	ADDQ   $1, R12
 
-	MOVOU (R14), X13 // X13 = tk2 ^ tk3 ^ rcon[0]
-	MOVO  X12, X4    // X4 = nonce
-	PXOR  X0, X13    // X13 ^= tk1
-	PXOR  X13, X4    // X4 ^= X13
+	MOVOU (R14), X8 // X8 = tk2 ^ tk3 ^ rcon[0]
+	MOVO  X12, X4   // X4 = nonce
+	PXOR  X0, X8    // X8 ^= tk1
+	PXOR  X8, X4    // X4 ^= X8
 
 #define block_x1_round(N) \
-	PSHUFB X14, X0     \ // X0 = h(tk1)
-	MOVOU  N(R14), X13 \ // X13 = tk2 ^ tk3 ^ rcon[i]
-	PXOR   X0, X13     \ // X13 ^= tk1
-	AESENC X13, X4
+	PSHUFB X14, X0    \ // X0 = h(tk1)
+	MOVOU  N(R14), X8 \ // X8 = tk2 ^ tk3 ^ rcon[i]
+	PXOR   X0, X8     \ // X8 ^= tk1
+	AESENC X8, X4
 
 block_x1_round(16)
 block_x1_round(32)
@@ -581,5 +584,7 @@ block_x1_round(256)
 	JNZ  block_x1_loop
 
 out:
-	ZERO_XMM()
+	// Sanitize remaining registers of key material.
+	PXOR X0, X0 // tk1 (block 0)
+
 	RET
