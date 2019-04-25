@@ -20,8 +20,8 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-// Package ct64 provides a portable constant time Deoxys-II-256-128 instementation
-// intended for 64 bit processors.
+// Package ct64 provides a portable constant time Deoxys-II-256-128
+// implementation intended for 64 bit processors.
 //
 // Performance is likely to be attrocious, as not much effort has been spent on
 // optimization, under the view that it's unlikely to ever actually be really

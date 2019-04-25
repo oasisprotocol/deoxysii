@@ -1,5 +1,5 @@
 ### deoxysii - Deoxys-II-256-128 for Go
-[![CircleCI](https://circleci.com/gh/oasislabs/deoxysii.svg?style=svg&circle-token=dec1a5a0550ad1bab80081227aa23b96efff5e7d)](https://circleci.com/gh/oasislabs/deoxysii)
+[![CircleCI](https://circleci.com/gh/oasislabs/deoxysii.svg?style=svg&circle-token=dec1a5a0550ad1bab80081227aa23b96efff5e7d)](https://circleci.com/gh/oasislabs/deoxysii) [![GoDoc](https://godoc.org/github.com/oasislabs/deoxysii?status.svg)](https://godoc.org/github.com/oasislabs/deoxysii)
 
 This package provides a "from-the-paper" implementation of the
 [Deoxys-II-256-128 v1.41][1] algorithm from the [final CAESAR portfolio][2].
