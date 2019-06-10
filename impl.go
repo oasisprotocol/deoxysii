@@ -22,7 +22,7 @@
 
 // Package deoxysii implements the Deoxys-II-256-128 MRAE algorithm.
 //
-// See: https://competitions.cr.yp.to/round3/deoxysv141.pdf
+// See: https://sites.google.com/view/deoxyscipher
 package deoxysii
 
 import (
