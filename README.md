@@ -2,7 +2,7 @@
 [![CircleCI](https://circleci.com/gh/oasislabs/deoxysii.svg?style=svg&circle-token=dec1a5a0550ad1bab80081227aa23b96efff5e7d)](https://circleci.com/gh/oasislabs/deoxysii) [![GoDoc](https://godoc.org/github.com/oasislabs/deoxysii?status.svg)](https://godoc.org/github.com/oasislabs/deoxysii)
 
 This package provides a "from-the-paper" implementation of the
-[Deoxys-II-256-128 v1.41][1] algorithm from the [final CAESAR portfolio][2].
+[Deoxys-II-256-128 v1.43][1] algorithm from the [final CAESAR portfolio][2].
 
 #### Implementations
 
@@ -30,6 +30,6 @@ Additionally a rather ludicrous amount of time is spent implementing the
 `h` permutation in software, that can be replaced with a single `PSHUFB`
 instruction.
 
-[1]: https://competitions.cr.yp.to/round3/deoxysv141.pdf
+[1]: https://drive.google.com/file/d/1IUELtBUdp6vrY8uhxHhycsGuSH_XlpMJ/view?usp=drive_web
 [2]: https://competitions.cr.yp.to/caesar-submissions.html
 [3]: https://eprint.iacr.org/2009/129.pdf

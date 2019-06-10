@@ -33,7 +33,7 @@ import (
 )
 
 //
-// AMD64 SSSE3 + AES-NI instementation.
+// AMD64 SSSE3 + AES-NI implementation.
 //
 // The assembly uses the following instructions over SSE2:
 //  * PSHUFB (SSSE3)

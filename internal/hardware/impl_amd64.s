@@ -91,8 +91,8 @@ DATA ·invx7mask<>+0x08(SB)/8, $0x7f7f7f7f7f7f7f7f
 GLOBL ·invx7mask<>(SB), (NOPTR+RODATA), $16
 
 // h shuffle
-DATA ·hshuf<>+0x00(SB)/8, $0x0e01040b0a0d0007
-DATA ·hshuf<>+0x08(SB)/8, $0x06090c030205080f
+DATA ·hshuf<>+0x00(SB)/8, $0x000f0a050c0b0601
+DATA ·hshuf<>+0x08(SB)/8, $0x0807020d04030e09
 GLOBL ·hshuf<>(SB), (NOPTR+RODATA), $16
 
 // endian byteswap + move to high double quad word
