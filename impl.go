@@ -57,7 +57,9 @@ var (
 	// invalid
 	ErrInvalidKeySize = errors.New("deoxysii: invalid key size")
 
-	errInvalidNonceSize = errors.New("deoxysii: invalid nonce size")
+	// ErrInvalidNonceSize is the error returned when the nonce size
+	// is invalid
+	ErrInvalidNonceSize = errors.New("deoxysii: invalid nonce size")
 
 	factory api.Factory
 )
@@ -87,7 +89,7 @@ func (aead *deoxysII) Overhead() int {
 // as dst. Otherwise, the remaining capacity of dst must not overlap plaintext.
 func (aead *deoxysII) Seal(dst, nonce, plaintext, additionalData []byte) []byte {
 	if len(nonce) != NonceSize {
-		panic(errInvalidNonceSize)
+		panic(ErrInvalidNonceSize)
 	}
 
 	ret, out := sliceForAppend(dst, len(plaintext)+TagSize)
@@ -109,7 +111,7 @@ func (aead *deoxysII) Seal(dst, nonce, plaintext, additionalData []byte) []byte 
 // may be overwritten.
 func (aead *deoxysII) Open(dst, nonce, ciphertext, additionalData []byte) ([]byte, error) {
 	if len(nonce) != NonceSize {
-		return nil, errInvalidNonceSize
+		return nil, ErrInvalidNonceSize
 	}
 	if len(ciphertext) < TagSize {
 		return nil, ErrOpen
@@ -119,9 +121,7 @@ func (aead *deoxysII) Open(dst, nonce, ciphertext, additionalData []byte) ([]byt
 	ok := aead.inner.D(nonce, out, additionalData, ciphertext)
 	if !ok {
 		// Do not release unauthenticated plaintext.
-		for i := range out {
-			out[i] = 0
-		}
+		api.Bzero(out)
 		return nil, ErrOpen
 	}
 

@@ -28,6 +28,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/oasislabs/deoxysii/internal/api"
 	"github.com/oasislabs/deoxysii/internal/ct32"
 	"github.com/oasislabs/deoxysii/internal/ct64"
@@ -39,6 +41,60 @@ var testFactories = []api.Factory{
 	ct64.Factory,
 	ct32.Factory,
 	vartime.Factory,
+}
+
+type resetAble interface {
+	Reset()
+}
+
+func TestImpl(t *testing.T) {
+	oldFactory := factory
+	defer func() {
+		factory = oldFactory
+	}()
+
+	for _, testFactory := range testFactories {
+		t.Run("Implementation_"+testFactory.Name(), func(t *testing.T) {
+			factory = testFactory
+			doTestImpl(t)
+		})
+	}
+}
+
+func doTestImpl(t *testing.T) {
+	require := require.New(t)
+
+	// New with a invalid key size should fail.
+	var key [KeySize]byte
+	aead, err := New(key[:KeySize-1])
+	require.Nil(aead, "aead.New(): Truncated Key")
+	require.Equal(ErrInvalidKeySize, err, "aead.New(): Truncated key")
+
+	aead, err = New(key[:])
+	require.NoError(err, "aead.New()")
+	require.NotNil(aead, "aead.New()")
+
+	// Seal with an invalid nonce size should panic.
+	var nonce [NonceSize]byte
+	require.Panics(func() {
+		aead.Seal(nil, nonce[:NonceSize-1], nil, nil)
+	}, "aead.Seal(): Truncated nonce")
+
+	// Open with a invalid nonce size should fail.
+	var ct [TagSize]byte
+	b, err := aead.Open(nil, nonce[:NonceSize-1], ct[:], nil)
+	require.Equal(ErrInvalidNonceSize, err, "aead.Open(): Truncated nonce")
+	require.Nil(b, "aead.Open(): Truncated nonce")
+
+	// Open with a invalid ciphertext || tag should fail.
+	b, err = aead.Open(nil, nonce[:], ct[:TagSize-1], nil)
+	require.Equal(ErrOpen, err, "aead.Open(): Truncated ciphertext")
+	require.Nil(b, "aead.Open(): Truncated ciphertext")
+
+	// The AEAD instance should implement Reset().
+	require.Implements((*resetAble)(nil), aead, "Reset() is implemented")
+	rst := aead.(resetAble)
+	rst.Reset()
 }
 
 func BenchmarkDeoxysII(b *testing.B) {
