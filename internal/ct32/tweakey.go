@@ -23,7 +23,7 @@
 package ct32
 
 import (
-	aes "git.schwanenlied.me/yawning/bsaes.git/ct32"
+	aes "gitlab.com/yawning/bsaes.git/ct32"
 
 	"github.com/oasislabs/deoxysii/internal/api"
 )

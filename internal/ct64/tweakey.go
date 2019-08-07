@@ -23,7 +23,7 @@
 package ct64
 
 import (
-	aes "git.schwanenlied.me/yawning/bsaes.git/ct64"
+	aes "gitlab.com/yawning/bsaes.git/ct64"
 
 	"github.com/oasislabs/deoxysii/internal/api"
 )
