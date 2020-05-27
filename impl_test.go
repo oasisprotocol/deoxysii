@@ -30,11 +30,11 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/oasislabs/deoxysii/internal/api"
-	"github.com/oasislabs/deoxysii/internal/ct32"
-	"github.com/oasislabs/deoxysii/internal/ct64"
-	"github.com/oasislabs/deoxysii/internal/hardware"
-	"github.com/oasislabs/deoxysii/internal/vartime"
+	"github.com/oasisprotocol/deoxysii/internal/api"
+	"github.com/oasisprotocol/deoxysii/internal/ct32"
+	"github.com/oasisprotocol/deoxysii/internal/ct64"
+	"github.com/oasisprotocol/deoxysii/internal/hardware"
+	"github.com/oasisprotocol/deoxysii/internal/vartime"
 )
 
 var testFactories = []api.Factory{

@@ -25,7 +25,7 @@ package vartime
 import (
 	"encoding/binary"
 
-	"github.com/oasislabs/deoxysii/internal/api"
+	"github.com/oasisprotocol/deoxysii/internal/api"
 )
 
 // Everytime someome implements a Te/Td table driven AES, an angel loses

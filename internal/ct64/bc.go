@@ -27,7 +27,7 @@ import (
 
 	aes "gitlab.com/yawning/bsaes.git/ct64"
 
-	"github.com/oasislabs/deoxysii/internal/api"
+	"github.com/oasisprotocol/deoxysii/internal/api"
 )
 
 func bcEncrypt(ciphertext []byte, stks *[api.STKCount][8]uint64, plaintext []byte) {

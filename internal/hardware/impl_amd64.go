@@ -29,7 +29,7 @@ import (
 
 	"golang.org/x/sys/cpu"
 
-	"github.com/oasislabs/deoxysii/internal/api"
+	"github.com/oasisprotocol/deoxysii/internal/api"
 )
 
 //
