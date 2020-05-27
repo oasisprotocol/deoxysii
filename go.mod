@@ -1,4 +1,4 @@
-module github.com/oasislabs/deoxysii
+module github.com/oasisprotocol/deoxysii
 
 require (
 	github.com/stretchr/testify v1.3.0

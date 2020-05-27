@@ -31,7 +31,7 @@ package ct32
 import (
 	"crypto/subtle"
 
-	"github.com/oasislabs/deoxysii/internal/api"
+	"github.com/oasisprotocol/deoxysii/internal/api"
 )
 
 var Factory api.Factory = &ct32Factory{}

@@ -1,5 +1,12 @@
 ### deoxysii - Deoxys-II-256-128 for Go
-[![CircleCI](https://circleci.com/gh/oasislabs/deoxysii.svg?style=svg&circle-token=dec1a5a0550ad1bab80081227aa23b96efff5e7d)](https://circleci.com/gh/oasislabs/deoxysii) [![GoDoc](https://godoc.org/github.com/oasislabs/deoxysii?status.svg)](https://godoc.org/github.com/oasislabs/deoxysii)
+
+[![Build status][github-ci-tests-badge]][github-ci-tests-link]
+[![GoDoc][godoc-badge]][godoc-link]
+
+[github-ci-tests-badge]: https://github.com/oasisprotocol/deoxysii/workflows/ci-tests/badge.svg
+[github-ci-tests-link]: https://github.com/oasisprotocol/deoxysii/actions?query=workflow:ci-tests
+[godoc-badge]: https://godoc.org/github.com/oasisprotocol/deoxysii?status.svg
+[godoc-link]: https://godoc.org/github.com/oasisprotocol/deoxysii
 
 This package provides a "from-the-paper" implementation of the
 [Deoxys-II-256-128 v1.43][1] algorithm from the [final CAESAR portfolio][2].

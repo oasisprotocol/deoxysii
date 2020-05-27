@@ -25,7 +25,7 @@
 package hardware
 
 import (
-	"github.com/oasislabs/deoxysii/internal/api"
+	"github.com/oasisprotocol/deoxysii/internal/api"
 )
 
 var Factory api.Factory
