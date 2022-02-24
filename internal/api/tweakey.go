@@ -57,7 +57,7 @@ func lfsr3(t *[STKSize]byte) {
 
 func xorRC(t *[STKSize]byte, i int) {
 	rcon := rcons[i]
-	var rc = [STKSize]byte{
+	rc := [STKSize]byte{
 		1, 2, 4, 8,
 		rcon, rcon, rcon, rcon,
 		0, 0, 0, 0,
@@ -99,7 +99,4 @@ func STKDeriveK(key []byte, derivedKs *[STKCount][STKSize]byte) {
 		XORBytes(derivedKs[i][:], tk2[:], tk3[:], STKSize)
 		xorRC(&derivedKs[i], i)
 	}
-
-	Bzero(tk2[:])
-	Bzero(tk3[:])
 }

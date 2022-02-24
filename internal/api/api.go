@@ -54,9 +54,6 @@ type Factory interface {
 }
 
 type Instance interface {
-	// Reset attempts to clear the instance of sensitive data.
-	Reset()
-
 	// E authenticate and encrypts ad/msg with the nonce, and writes
 	// ciphertext || tag to dst.
 	E(nonce, dst, ad, msg []byte)
@@ -92,10 +89,4 @@ func EncodeEncTweak(out *[TweakSize]byte, tag []byte, blockNr int) {
 	copy(out[:], tag[:])
 	out[0] |= 0x80
 	XORBytes(out[8:], out[8:], tmp[:], 8)
-}
-
-func Bzero(b []byte) {
-	for i := range b {
-		b[i] = 0
-	}
 }

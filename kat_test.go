@@ -109,7 +109,7 @@ func generateKAT(t *testing.T, fn string) {
 	}
 
 	jsonOut, _ := json.Marshal(&katOut)
-	err = ioutil.WriteFile(fn, jsonOut, 0600)
+	err = ioutil.WriteFile(fn, jsonOut, 0o600)
 	require.NoError(err, "ioutil.WriteFile()")
 }
 

@@ -123,17 +123,13 @@ func (aead *deoxysII) Open(dst, nonce, ciphertext, additionalData []byte) ([]byt
 	ok := aead.inner.D(nonce, out, additionalData, ciphertext)
 	if !ok {
 		// Do not release unauthenticated plaintext.
-		api.Bzero(out)
+		for i := range out {
+			out[i] = 0
+		}
 		return nil, ErrOpen
 	}
 
 	return ret, nil
-}
-
-// Reset attempts to clear the AEAD instance such that no sensitive keying
-// material remains in memory.
-func (aead *deoxysII) Reset() {
-	aead.inner.Reset()
 }
 
 // New creates a new cipher.AEAD instance backed by Deoxys-II-256-128

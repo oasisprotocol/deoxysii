@@ -51,12 +51,6 @@ type vartimeInstance struct {
 	derivedKs [api.STKCount][api.STKSize]byte
 }
 
-func (inst *vartimeInstance) Reset() {
-	for i := range inst.derivedKs {
-		api.Bzero(inst.derivedKs[i][:])
-	}
-}
-
 func (inst *vartimeInstance) E(nonce, dst, ad, msg []byte) {
 	var (
 		tweak [api.TweakSize]byte
