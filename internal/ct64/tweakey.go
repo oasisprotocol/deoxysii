@@ -23,9 +23,8 @@
 package ct64
 
 import (
-	aes "gitlab.com/yawning/bsaes.git/ct64"
-
 	"github.com/oasisprotocol/deoxysii/internal/api"
+	aes "github.com/oasisprotocol/deoxysii/internal/ext/aes/ct64"
 )
 
 // Note: This is trivial to accelerate with vector ops.  Performance

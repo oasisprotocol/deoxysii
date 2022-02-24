@@ -23,9 +23,8 @@
 package ct32
 
 import (
-	aes "gitlab.com/yawning/bsaes.git/ct32"
-
 	"github.com/oasisprotocol/deoxysii/internal/api"
+	aes "github.com/oasisprotocol/deoxysii/internal/ext/aes/ct32"
 )
 
 // Note: This is trivial to accelerate with vector ops.  Performance
