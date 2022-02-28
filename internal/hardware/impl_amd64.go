@@ -20,8 +20,8 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-//go:build amd64 && !noasm
-// +build amd64,!noasm
+//go:build amd64 && !purego
+// +build amd64,!purego
 
 package hardware
 

@@ -27,7 +27,7 @@ package api
 //
 
 // A.2 RCON constants
-var rcons = [STKCount]byte{
+var Rcons = [STKCount]byte{
 	0x2f, 0x5e, 0xbc, 0x63, 0xc6, 0x97, 0x35, 0x6a,
 	0xd4, 0xb3, 0x7d, 0xfa, 0xef, 0xc5, 0x91, 0x39,
 	0x72,
@@ -56,7 +56,7 @@ func lfsr3(t *[STKSize]byte) {
 }
 
 func xorRC(t *[STKSize]byte, i int) {
-	rcon := rcons[i]
+	rcon := Rcons[i]
 	rc := [STKSize]byte{
 		1, 2, 4, 8,
 		rcon, rcon, rcon, rcon,
