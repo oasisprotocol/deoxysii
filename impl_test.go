@@ -43,10 +43,6 @@ var testFactories = []api.Factory{
 	vartime.Factory,
 }
 
-type resetAble interface {
-	Reset()
-}
-
 func TestImpl(t *testing.T) {
 	oldFactory := factory
 	defer func() {
@@ -90,11 +86,6 @@ func doTestImpl(t *testing.T) {
 	b, err = aead.Open(nil, nonce[:], ct[:TagSize-1], nil)
 	require.Equal(ErrOpen, err, "aead.Open(): Truncated ciphertext")
 	require.Nil(b, "aead.Open(): Truncated ciphertext")
-
-	// The AEAD instance should implement Reset().
-	require.Implements((*resetAble)(nil), aead, "Reset() is implemented")
-	rst := aead.(resetAble)
-	rst.Reset()
 }
 
 func BenchmarkDeoxysII(b *testing.B) {

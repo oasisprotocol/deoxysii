@@ -30,8 +30,6 @@ import (
 	"errors"
 	"strconv"
 
-	"gitlab.com/yawning/slice.git"
-
 	"github.com/oasisprotocol/deoxysii/internal/api"
 	"github.com/oasisprotocol/deoxysii/internal/ct32"
 	"github.com/oasisprotocol/deoxysii/internal/ct64"
@@ -94,7 +92,7 @@ func (aead *deoxysII) Seal(dst, nonce, plaintext, additionalData []byte) []byte 
 		panic(ErrInvalidNonceSize)
 	}
 
-	ret, out := slice.ForAppend(dst, len(plaintext)+TagSize)
+	ret, out := sliceForAppend(dst, len(plaintext)+TagSize)
 	aead.inner.E(nonce, out, additionalData, plaintext)
 
 	return ret
@@ -119,21 +117,17 @@ func (aead *deoxysII) Open(dst, nonce, ciphertext, additionalData []byte) ([]byt
 		return nil, ErrOpen
 	}
 
-	ret, out := slice.ForAppend(dst, len(ciphertext)-TagSize)
+	ret, out := sliceForAppend(dst, len(ciphertext)-TagSize)
 	ok := aead.inner.D(nonce, out, additionalData, ciphertext)
 	if !ok {
 		// Do not release unauthenticated plaintext.
-		api.Bzero(out)
+		for i := range out {
+			out[i] = 0
+		}
 		return nil, ErrOpen
 	}
 
 	return ret, nil
-}
-
-// Reset attempts to clear the AEAD instance such that no sensitive keying
-// material remains in memory.
-func (aead *deoxysII) Reset() {
-	aead.inner.Reset()
 }
 
 // New creates a new cipher.AEAD instance backed by Deoxys-II-256-128

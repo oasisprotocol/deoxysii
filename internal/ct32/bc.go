@@ -25,9 +25,8 @@ package ct32
 import (
 	"encoding/binary"
 
-	aes "gitlab.com/yawning/bsaes.git/ct32"
-
 	"github.com/oasisprotocol/deoxysii/internal/api"
+	aes "github.com/oasisprotocol/deoxysii/internal/ext/aes/ct32"
 )
 
 func bcEncrypt(ciphertext []byte, stks *[api.STKCount][8]uint32, plaintext []byte) {

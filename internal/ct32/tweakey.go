@@ -23,9 +23,8 @@
 package ct32
 
 import (
-	aes "gitlab.com/yawning/bsaes.git/ct32"
-
 	"github.com/oasisprotocol/deoxysii/internal/api"
+	aes "github.com/oasisprotocol/deoxysii/internal/ext/aes/ct32"
 )
 
 // Note: This is trivial to accelerate with vector ops.  Performance
@@ -51,8 +50,6 @@ func deriveSubTweakKeysx1(stks, dkQs *[api.STKCount][8]uint32, t *[api.TweakSize
 		aes.Load4xU32(&stks[i], tk1[:])
 		aes.AddRoundKey(&stks[i], dkQs[i][:])
 	}
-
-	api.Bzero(tk1[:])
 }
 
 func deriveSubTweakKeysx2(stks, dkQs *[api.STKCount][8]uint32, t *[2][api.TweakSize]byte) {
@@ -70,9 +67,5 @@ func deriveSubTweakKeysx2(stks, dkQs *[api.STKCount][8]uint32, t *[2][api.TweakS
 		}
 		aes.Load8xU32(&stks[i], tk1[0][:], tk1[1][:])
 		aes.AddRoundKey(&stks[i], dkQs[i][:])
-	}
-
-	for i := range t {
-		api.Bzero(tk1[i][:])
 	}
 }

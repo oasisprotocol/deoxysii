@@ -20,7 +20,8 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-// +build amd64,!noasm
+//go:build amd64 && !purego
+// +build amd64,!purego
 
 package hardware
 
@@ -66,12 +67,6 @@ func (f *aesniFactory) New(key []byte) api.Instance {
 
 type aesniInstance struct {
 	derivedKs [api.STKCount][api.STKSize]byte
-}
-
-func (inst *aesniInstance) Reset() {
-	for i := range inst.derivedKs {
-		api.Bzero(inst.derivedKs[i][:])
-	}
 }
 
 func (inst *aesniInstance) E(nonce, dst, ad, msg []byte) {

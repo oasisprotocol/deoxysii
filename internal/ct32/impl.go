@@ -49,19 +49,11 @@ func (f *ct32Factory) New(key []byte) api.Instance {
 	api.STKDeriveK(key, &derivedKs)
 	derivedKsOrtho(&inner.derivedKQs, &derivedKs)
 
-	for i := range derivedKs {
-		api.Bzero(derivedKs[i][:])
-	}
-
 	return &inner
 }
 
 type ct32Instance struct {
 	derivedKQs [api.STKCount][8]uint32
-}
-
-func (inst *ct32Instance) Reset() {
-	bzeroStks(&inst.derivedKQs)
 }
 
 func (inst *ct32Instance) E(nonce, dst, ad, msg []byte) {
@@ -168,8 +160,6 @@ func (inst *ct32Instance) E(nonce, dst, ad, msg []byte) {
 
 	// Append the tag.
 	copy(dst[len(dst)-api.TagSize:], auth[:])
-
-	bzeroStks(&stks)
 }
 
 func (inst *ct32Instance) D(nonce, dst, ad, ct []byte) bool {
@@ -278,16 +268,6 @@ func (inst *ct32Instance) D(nonce, dst, ad, ct []byte) bool {
 	deriveSubTweakKeysx1(&stks, &inst.derivedKQs, &decNonce)
 	bcEncrypt(auth[:], &stks, auth[:])
 
-	bzeroStks(&stks)
-
 	// Tag verification.
 	return subtle.ConstantTimeCompare(tag, auth[:]) == 1
-}
-
-func bzeroStks(stks *[api.STKCount][8]uint32) {
-	for _, stk := range stks {
-		for j := range stk {
-			stk[j] = 0
-		}
-	}
 }
